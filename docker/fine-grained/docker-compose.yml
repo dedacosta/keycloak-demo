@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  keycloak-db:
+    container_name: local-keycloak-db
+    image: postgres:latest
+    volumes:
+        - local-db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    healthcheck:
+      test: "exit 0"
+    networks:
+      - keycloak_network
+
+  keycloak:
+    container_name: local-keycloak
+    image: quay.io/keycloak/keycloak:latest
+    command:
+      - start-dev
+    ports:
+      - "8080:8080"
+    depends_on:	
+      keycloak-db: 
+        condition: service_healthy
+    networks:
+      - keycloak_network	    
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://local-keycloak-db:5432/keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_DB_USERNAME: keycloak
+      KC_FEATURES: admin-fine-grained-authz, client-policies
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+
+networks:
+  keycloak_network:
+    driver: bridge    
+    
+volumes:
+  local-db-data:
+    driver: local
+    
+    
